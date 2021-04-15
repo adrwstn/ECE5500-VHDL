@@ -11,27 +11,44 @@ end Controller ;
 
 architecture behaviour of Controller is
 
-signal SR_Q : std_logic := '0';
-signal LOAD : std_logic := '1';
+type state_type is (S0, S1, S2); -- SO=LOAD S1=Shift-right S2=Shift-left
+
+signal state  : state_type;
+
+function is_all(vec : std_logic_vector; val : std_logic) return boolean is
+		constant all_bits : std_logic_vector(vec'range) := (others => val);
+		begin
+			return vec = all_bits;
+end function; --is_all()
+
 
 begin
-	setMode : process( Observers )
+	setState : process( Observers )
   begin
-    if Observers = "1111111111" then
-      LOAD <= '1';
-      elsif ( Observers(9) = '0' )  then
-        SR_Q <= '0';	-- MODE = shift-right
-        LOAD <= '0';
---			elsif ( Observers(0) = '0' ) then
+    if is_all(Observers,'1') then
+     state <= S0;
+      elsif ( Observers(0) /= '0' )  then
+        state <= S1;
 			else
-				SR_Q <= '1';	-- MODE = shift-left
-				LOAD <= '0';
+				state <= S2;
     end if ;
 
-  if LOAD = '1' then MODE <= "11";
-	elsif SR_Q = '0' then MODE <= "01";
-		elsif SR_Q = '1' then MODE <= "10";
-  end if ;
- end process ; -- setMode
-
+--  if state = S0 then MODE <= "11";
+--	elsif state = S1 then MODE <= "01";
+--		elsif state = S2 then MODE <= "10";
+--  end if ;
+ end process ; -- setState
+	
+	setMode : process(state)
+	begin
+		case state is
+			when S0 =>
+				MODE <= "11";
+			when S1 =>
+				MODE <= "01";
+			when S2 =>
+				MODE <= "10";
+		end case;
+	end process; --setMode
+ 
 end architecture ; -- behaviour

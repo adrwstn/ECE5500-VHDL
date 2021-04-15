@@ -16,54 +16,27 @@ end entity;
 
 architecture behaviour of UniveralShiftRegister_10bit is
 
-	type state_type is (S0, S1, S2);
-	signal state : state_type := S0;
-	
-	signal internal_I : std_logic_vector(9 downto 0) := I; -- used to represent 'cells' of register
-
-	function is_all(vec : std_logic_vector; val : std_logic) return boolean is
-		constant all_bits : std_logic_vector(vec'range) := (others => val);
-		begin
-			return vec = all_bits;
-	end function; --is_all()
-	
-	constant state_trans_delay : time := 100 ms;
+	signal internal_I : std_logic_vector(9 downto 0) := I; -- used to represent 'cells' of register	
 	
 begin
 	sequential : process( CLK )
 	begin
-	
-		if (rising_edge(CLK)) then
-			case ( state ) is
-				when S0 =>
-					if (is_all( internal_I,'1')) then	--if all 'cells' high i.e. all LEDs are off
-						state <= S0;				--stay in state S0
-						else
-							state <= S1;			--move to state S1
-					end if;
-				
-				when S1 =>
-					if ( I(0) /= '0' ) then
-						internal_I <= '1' & internal_I(8 downto 0) ;	--right-shift
-						state <= S1;									--stay in state S1
-							else					
-								internal_I <= internal_I(8 downto 0) & '1';	--left-shift
-								state <= S2;							--move to state S2
-					end if ;
-				
-				when S2 =>
-					if ( I(0) /= '0' ) then							--if right-most LED is on
-						internal_I <= internal_I(8 downto 0) & '1';	--left-shift
-						state <= S2;									--stay in state S2
-							else					
-								internal_I <= '1' & internal_I(8 downto 0);	--right-shift
-								state <= S1;							--move to state S1
-					end if ;
+--		if (CLK'event and CLK='1' ) then
+		if rising_edge(CLK) then
+			case  MD  is
+				when "11" => internal_I <= I ;--load
+				when "01" =>internal_I <= I; --shift-right					
+						internal_I <= '1' & internal_I(9 downto 1);
+				when "10" => internal_I <= I;					--left-shift
+						internal_I <= internal_I(8 downto 0) & '1';
+				when "00" => internal_I <= I;
+								--shouldn't get here
 			end case ;
 		end if ;	--rising_edge(CLK)
-		A <= internal_I;
+		
 	end process ; -- sequential
-
+--	internal_I <= "1010101011"; --test
+	A <= internal_I;
 end behaviour;
 
 
